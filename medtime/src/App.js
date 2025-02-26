@@ -3,10 +3,12 @@ import Home from './pages/Home';
 import { Route, Routes } from "react-router-dom";
 import Signup from './pages/Signup';
 import Login from './pages/Login';
+import Navbar from './pages/Navbar'
 
 function App() {
   return (
     <>
+    <Navbar />
       <div className="container">
         <Routes>
           <Route path="/" element={<Home />} />
