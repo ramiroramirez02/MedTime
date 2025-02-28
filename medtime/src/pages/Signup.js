@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AuthErrorCodes, createUserWithEmailAndPassword, getAuth } from "firebase/auth";
 import { firebaseApp, signInWithGooglePopup } from "../firebase/firebaseConfig";
 import "../style/Signup.css"
@@ -7,6 +7,7 @@ import "../style/Signup.css"
 function Signup() {
   const [input, setInput] = useState({ email: "", password: "" });
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
 
   const auth = getAuth(firebaseApp);
@@ -14,6 +15,7 @@ function Signup() {
   const logGoogleUser = async () => {
     const response = await signInWithGooglePopup();
     console.log(response);
+    navigate("/Profile");
   }
 
   const handleSubmit = (e) => {
@@ -23,16 +25,20 @@ function Signup() {
     let password = input.password;
 
     createUserWithEmailAndPassword(auth, email, password)
-      .catch((err) => {
-        if (err.code === AuthErrorCodes.WEAK_PASSWORD) {
-        setError("The password is too weak.");
+    .then((userCredential) => {
+      console.log(userCredential.user);
+      navigate("/Profile")
+    })
+    .catch((err) => {
+      if (err.code === AuthErrorCodes.WEAK_PASSWORD) {
+        setError("Password is too weak.");
       } else if (err.code === AuthErrorCodes.EMAIL_EXISTS) {
-        setError("The email address is already in use.");
+        setError("The email address is already is use.") 
       } else {
         console.log(err.code);
         alert(err.code);
       }
-      });
+    });
   };
 
    const handleChange = (e) => {
