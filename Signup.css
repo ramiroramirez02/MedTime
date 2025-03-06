@@ -1,0 +1,111 @@
+/* General Page Styles */
+.form-body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: #f8f9fa;
+    font-family: Arial, sans-serif;
+    flex-direction: column;
+}
+
+/* Signup Form Container */
+.form {
+    width: 400px;
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    border: 2px solid black;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Form Heading */
+h1 {
+    font-size: 2rem;
+    font-weight: bold;
+    color: black;
+    margin-bottom: 10px;
+}
+
+/* Form Description */
+p {
+    font-size: 1rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Input Fields */
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 2px solid black;
+    border-radius: 5px;
+    font-size: 1rem;
+}
+
+/* Buttons */
+.btn {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+button {
+    background: white;
+    color: black;
+    border: 2px solid black;
+    padding: 10px;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    background: black;
+    color: white;
+}
+
+/* Google Signup Button */
+button:nth-child(2) {
+    background: #4285F4;
+    color: white;
+    border: none;
+}
+
+button:nth-child(2):hover {
+    background: #357ae8;
+}
+
+/* Error Message */
+.login-error {
+    color: red;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+/* ✅ "Already have an account?" Text Positioned Below the Form */
+.option {
+    text-align: center;
+    font-size: 1rem;
+    margin-top: 20px; /* Adjust spacing */
+}
+
+.option p {
+    color: black;
+}
+
+.option a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.option a:hover {
+    text-decoration: underline;
+}
