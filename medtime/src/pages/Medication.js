@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { firestore } from '../firebase/firebaseConfig';
-import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth } from '../firebase/firebaseConfig';
 import '../style/Medication.css';
 
@@ -104,8 +104,16 @@ const Medication = () => {
       return;
     }
 
-    const medicationId = `${selectedMedication.name}_${Date.now()}`;
-    const docRef = doc(firestore, "users", uid, "medications", medicationId);
+    const cleanName = selectedMedication.name.replace(/[\/\\.#$\[\]]/g, '-');
+    const medicationId = `${cleanName}_${Date.now()}`;
+    const isEditing = !selectedMedication.id;
+    const docRef = doc(
+        firestore,
+        "users",
+        uid,
+        "medications",
+        isEditing ? selectedMedication.id : `${cleanName}_${Date.now()}`
+    );
 
     await setDoc(docRef, {
       name: selectedMedication.name,
@@ -127,6 +135,25 @@ const Medication = () => {
       Saturday: [],
       Sunday: [],
     });
+  };
+
+  const handleDeleteMedication = async (medicationId) => {
+    const docRef = doc(firestore, "users", uid, "medications", medicationId);
+    await deleteDoc(docRef);
+    setMedicationsList(medicationsList.filter(m => m.id !== medicationId));
+  }
+
+  const handleEditMedication = async (medId) => {
+    const medToEdit = medicationsList.find(m => m.id === medId);
+    if (!medToEdit) return;
+
+    setSelectedMedication({
+        name: medToEdit.name,
+        id: medId,
+    });
+
+    setDosage(medToEdit.dosage);
+    setWeeklySchedule(medToEdit.schedule);
   };
 
   return (
@@ -222,6 +249,7 @@ const Medication = () => {
                   name: med.name,
                   dosage: med.dosage,
                   time,
+                  id: med.id
                 });
               });
             }
@@ -239,6 +267,8 @@ const Medication = () => {
                   {dayMeds.map((med, idx) => (
                     <li key={idx}>
                       <strong>{med.time}</strong> — {med.name} ({med.dosage})
+                      <button onClick={() => handleEditMedication(med.id)}>✏️</button>
+                      <button onClick={() => handleDeleteMedication(med.id)}>🗑️</button>
                     </li>
                   ))}
                 </ul>
