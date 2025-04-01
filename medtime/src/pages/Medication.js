@@ -1,0 +1,254 @@
+import React, { useState, useEffect } from 'react';
+import { firestore } from '../firebase/firebaseConfig';
+import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
+import { auth } from '../firebase/firebaseConfig';
+import '../style/Medication.css';
+
+const Medication = () => {
+  const uid = auth.currentUser?.uid;
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [medications, setMedications] = useState([]);
+  const [selectedMedication, setSelectedMedication] = useState(null);
+  const [selectedMedicationInfo, setSelectedMedicationInfo] = useState(null);
+  const [dosage, setDosage] = useState('');
+  const [medicationsList, setMedicationsList] = useState([]);
+
+  const [weeklySchedule, setWeeklySchedule] = useState({
+    Monday: [],
+    Tuesday: [],
+    Wednesday: [],
+    Thursday: [],
+    Friday: [],
+    Saturday: [],
+    Sunday: [],
+  });
+
+  const fetchMedications = async (term) => {
+    const res = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${term}`);
+    const data = await res.json();
+
+    const meds = [];
+
+    data.drugGroup?.conceptGroup?.forEach(group => {
+      group.conceptProperties?.forEach(prop => {
+        meds.push({
+          id: prop.rxcui,
+          name: prop.name,
+          rxcui: prop.rxcui,
+        });
+      });
+    });
+
+    setMedications(meds);
+  };
+
+  const handleMedicationSelect = async (med) => {
+    setSelectedMedication(med);
+
+    let fdaData = null;
+    let pillImage = null;
+
+    try {
+      const fdaRes = await fetch(`https://api.fda.gov/drug/label.json?search=generic_name:${med.name}&limit=1`);
+      const fdaJson = await fdaRes.json();
+      fdaData = fdaJson.results?.[0];
+    } catch (err) {}
+
+    try {
+      const imgRes = await fetch(`https://rximage.nlm.nih.gov/api/rximage/1/rxbase?rxcui=${med.rxcui}`);
+      const imgJson = await imgRes.json();
+      pillImage = imgJson.nlmRxImages?.[0]?.imageUrl;
+    } catch (err) {}
+
+    setSelectedMedicationInfo({
+      description: fdaData?.description?.[0],
+      image: pillImage,
+    });
+  };
+
+  useEffect(() => {
+    if (searchTerm.length > 2) {
+      fetchMedications(searchTerm);
+    }
+  }, [searchTerm]);
+
+  useEffect(() => {
+    const fetchMedicationsList = async () => {
+      if (!uid) return;
+      const medsRef = collection(firestore, "users", uid, "medications");
+      const snapshot = await getDocs(medsRef);
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setMedicationsList(data);
+    };
+
+    fetchMedicationsList();
+  }, [uid, selectedMedication]);
+
+  const handleAddTime = (day) => {
+    setWeeklySchedule({
+      ...weeklySchedule,
+      [day]: [...weeklySchedule[day], ''],
+    });
+  };
+
+  const handleTimeChange = (day, idx, value) => {
+    const updated = [...weeklySchedule[day]];
+    updated[idx] = value;
+    setWeeklySchedule({ ...weeklySchedule, [day]: updated });
+  };
+
+  const handleSubmit = async () => {
+    if (!uid || !selectedMedication) {
+      alert("You must be logged in and select a medication.");
+      return;
+    }
+
+    const medicationId = `${selectedMedication.name}_${Date.now()}`;
+    const docRef = doc(firestore, "users", uid, "medications", medicationId);
+
+    await setDoc(docRef, {
+      name: selectedMedication.name,
+      dosage,
+      schedule: weeklySchedule,
+      createdAt: new Date(),
+    });
+
+    alert("Reminder saved to Firestore!");
+    setSelectedMedication(null);
+    setSelectedMedicationInfo(null);
+    setDosage('');
+    setWeeklySchedule({
+      Monday: [],
+      Tuesday: [],
+      Wednesday: [],
+      Thursday: [],
+      Friday: [],
+      Saturday: [],
+      Sunday: [],
+    });
+  };
+
+  return (
+    <div className="medication-container">
+      <h2>Set Medication Reminder</h2>
+  
+      <input
+        type="text"
+        placeholder="Search medication..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+      />
+  
+      {medications.length > 0 && (
+        <ul>
+          {medications.map((med) => (
+            <li key={med.id} onClick={() => handleMedicationSelect(med)}>
+              {med.name}
+            </li>
+          ))}
+        </ul>
+      )}
+  
+      {selectedMedication && (
+        <div>
+          <h3>{selectedMedication.name}</h3>
+  
+          {selectedMedicationInfo?.image && (
+            <div>
+              <img
+                src={selectedMedicationInfo.image}
+                alt="Pill"
+                className="pill-image"
+              />
+            </div>
+          )}
+  
+          {selectedMedicationInfo?.description && (
+            <p className="med-description">
+              {selectedMedicationInfo.description}
+            </p>
+          )}
+  
+          <label>
+            Dosage:
+            <input
+              type="text"
+              value={dosage}
+              onChange={(e) => setDosage(e.target.value)}
+              placeholder="e.g. 200mg"
+            />
+          </label>
+  
+          <h4>Schedule for Days of the Week</h4>
+          {Object.keys(weeklySchedule).map((day) => (
+            <div className="weekday-row" key={day}>
+              <strong>{day}</strong>
+              {weeklySchedule[day].map((time, idx) => (
+                <input
+                  key={idx}
+                  type="time"
+                  value={time}
+                  onChange={(e) => handleTimeChange(day, idx, e.target.value)}
+                />
+              ))}
+              <button
+                type="button"
+                className="add-time-button"
+                onClick={() => handleAddTime(day)}
+              >
+                + Add Time
+              </button>
+            </div>
+          ))}
+  
+          <button className="save-button" onClick={handleSubmit}>
+            Save Reminder
+          </button>
+        </div>
+      )}
+  
+      <div className="weekly-dashboard">
+        <h2>📅 Weekly Medication Schedule</h2>
+  
+        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+          const dayMeds = [];
+  
+          medicationsList.forEach((med) => {
+            const times = med.schedule?.[day];
+            if (times && times.length > 0) {
+              times.forEach((time) => {
+                dayMeds.push({
+                  name: med.name,
+                  dosage: med.dosage,
+                  time,
+                });
+              });
+            }
+          });
+  
+          dayMeds.sort((a, b) => a.time.localeCompare(b.time));
+  
+          return (
+            <div key={day} style={{ marginBottom: 20 }}>
+              <h3>{day}</h3>
+              {dayMeds.length === 0 ? (
+                <p style={{ color: '#888' }}>No meds scheduled</p>
+              ) : (
+                <ul>
+                  {dayMeds.map((med, idx) => (
+                    <li key={idx}>
+                      <strong>{med.time}</strong> — {med.name} ({med.dosage})
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};  
+
+export default Medication;
