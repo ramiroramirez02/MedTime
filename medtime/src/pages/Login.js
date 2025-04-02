@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {  AuthErrorCodes, getAuth, signInWithEmailAndPassword } from "firebase/auth";
 import { firebaseApp, signInWithGooglePopup } from "../firebase/firebaseConfig";
 import "../style/Signup.css"
+import TextToSpeech from "./TextToSpeech";
 
 function Login() {
   const [input, setInput] = useState({ email: "", password: "" });
@@ -95,6 +96,7 @@ function Login() {
           <Link to="/signup">Sign Up</Link>
         </p>
       </div>
+      <TextToSpeech/>
     </div>
   );
 }
