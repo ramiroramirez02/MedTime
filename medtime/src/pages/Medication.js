@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { firestore } from '../firebase/firebaseConfig';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { auth } from '../firebase/firebaseConfig';
+import emailjs from '@emailjs/browser';
 import '../style/Medication.css';
 
 const Medication = () => {
   const uid = auth.currentUser?.uid;
+  const userEmail = auth.currentUser?.email;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [medications, setMedications] = useState([]);
@@ -13,6 +15,7 @@ const Medication = () => {
   const [selectedMedicationInfo, setSelectedMedicationInfo] = useState(null);
   const [dosage, setDosage] = useState('');
   const [medicationsList, setMedicationsList] = useState([]);
+  const [sentReminders, setSentReminders] = useState(new Set());
 
   const [weeklySchedule, setWeeklySchedule] = useState({
     Monday: [],
@@ -27,7 +30,6 @@ const Medication = () => {
   const fetchMedications = async (term) => {
     const res = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${term}`);
     const data = await res.json();
-
     const meds = [];
 
     data.drugGroup?.conceptGroup?.forEach(group => {
@@ -85,6 +87,48 @@ const Medication = () => {
     fetchMedicationsList();
   }, [uid, selectedMedication]);
 
+  useEffect(() => {
+    if (!uid || !userEmail) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      const today = now.toLocaleDateString("en-US", { weekday: "long" });
+      const currentTime = now.toTimeString().slice(0, 5);
+
+      medicationsList.forEach((med) => {
+        const times = med.schedule?.[today] || [];
+
+        times.forEach((time) => {
+          const uniqueId = `${med.name}-${time}`;
+
+          if (time === currentTime && !sentReminders.has(uniqueId)) {
+            emailjs.send(
+              'service_hl7g80j',
+              'template_sr19vns',
+              {
+                to_email: userEmail,
+                name: med.name,
+                dosage: med.dosage,
+                time: currentTime,
+                message: 'Scheduled medication reminder',
+                from_name: 'Med Reminder App',
+                reply_to: 'support@yourdomain.com'
+              },
+              'QHE4Xvlo_Di_nsR8E'
+            ).then(() => {
+              console.log(`📧 Reminder sent for ${med.name} at ${time}`);
+              setSentReminders(prev => new Set(prev).add(uniqueId));
+            }).catch((err) => {
+              console.error('❌ Failed to send reminder:', err);
+            });
+          }
+        });
+      });
+    }, 60000);
+
+    return () => clearInterval(interval);
+  }, [medicationsList, uid, userEmail]);
+
   const handleAddTime = (day) => {
     setWeeklySchedule({
       ...weeklySchedule,
@@ -99,8 +143,8 @@ const Medication = () => {
   };
 
   const handleSubmit = async () => {
-    if (!uid || !selectedMedication) {
-      alert("You must be logged in and select a medication.");
+    if (!uid || !selectedMedication || !userEmail) {
+      alert("You must be logged in, select a medication, and have a valid email.");
       return;
     }
 
@@ -108,11 +152,11 @@ const Medication = () => {
     const medicationId = `${cleanName}_${Date.now()}`;
     const isEditing = !selectedMedication.id;
     const docRef = doc(
-        firestore,
-        "users",
-        uid,
-        "medications",
-        isEditing ? selectedMedication.id : `${cleanName}_${Date.now()}`
+      firestore,
+      "users",
+      uid,
+      "medications",
+      isEditing ? selectedMedication.id : medicationId
     );
 
     await setDoc(docRef, {
@@ -141,15 +185,15 @@ const Medication = () => {
     const docRef = doc(firestore, "users", uid, "medications", medicationId);
     await deleteDoc(docRef);
     setMedicationsList(medicationsList.filter(m => m.id !== medicationId));
-  }
+  };
 
   const handleEditMedication = async (medId) => {
     const medToEdit = medicationsList.find(m => m.id === medId);
     if (!medToEdit) return;
 
     setSelectedMedication({
-        name: medToEdit.name,
-        id: medId,
+      name: medToEdit.name,
+      id: medId,
     });
 
     setDosage(medToEdit.dosage);
@@ -159,14 +203,14 @@ const Medication = () => {
   return (
     <div className="medication-container">
       <h2>Set Medication Reminder</h2>
-  
+
       <input
         type="text"
         placeholder="Search medication..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-  
+
       {medications.length > 0 && (
         <ul>
           {medications.map((med) => (
@@ -176,11 +220,11 @@ const Medication = () => {
           ))}
         </ul>
       )}
-  
+
       {selectedMedication && (
         <div>
           <h3>{selectedMedication.name}</h3>
-  
+
           {selectedMedicationInfo?.image && (
             <div>
               <img
@@ -190,13 +234,13 @@ const Medication = () => {
               />
             </div>
           )}
-  
+
           {selectedMedicationInfo?.description && (
             <p className="med-description">
               {selectedMedicationInfo.description}
             </p>
           )}
-  
+
           <label>
             Dosage:
             <input
@@ -206,7 +250,7 @@ const Medication = () => {
               placeholder="e.g. 200mg"
             />
           </label>
-  
+
           <h4>Schedule for Days of the Week</h4>
           {Object.keys(weeklySchedule).map((day) => (
             <div className="weekday-row" key={day}>
@@ -228,19 +272,19 @@ const Medication = () => {
               </button>
             </div>
           ))}
-  
+
           <button className="save-button" onClick={handleSubmit}>
             Save Reminder
           </button>
         </div>
       )}
-  
+
       <div className="weekly-dashboard">
         <h2>📅 Weekly Medication Schedule</h2>
-  
-        {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map((day) => {
+
+        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].map((day) => {
           const dayMeds = [];
-  
+
           medicationsList.forEach((med) => {
             const times = med.schedule?.[day];
             if (times && times.length > 0) {
@@ -254,9 +298,9 @@ const Medication = () => {
               });
             }
           });
-  
+
           dayMeds.sort((a, b) => a.time.localeCompare(b.time));
-  
+
           return (
             <div key={day} style={{ marginBottom: 20 }}>
               <h3>{day}</h3>
@@ -279,6 +323,6 @@ const Medication = () => {
       </div>
     </div>
   );
-};  
+};
 
 export default Medication;

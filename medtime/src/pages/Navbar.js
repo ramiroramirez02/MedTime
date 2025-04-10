@@ -8,10 +8,10 @@ function Navbar() {
       <h1 className="logo">MedTime</h1>
       <ul className="nav-links">
         <li><Link to="/">Home</Link></li>
+        <li><Link to="/medication">Medication</Link></li>
         <li><Link to="/signup">Signup</Link></li>
         <li><Link to="/login">Login</Link></li>
         <li><Link to="/profile">Profile</Link></li>
-        <li><Link to="/medication">Medication</Link></li>
       </ul>
     </nav>
   );
