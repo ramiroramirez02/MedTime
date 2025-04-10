@@ -37,7 +37,7 @@ const Home = () => {
         </div>
       </div>
 
-      <button className="get-started-btn" onClick={() => navigate('/medication')}>
+      <button className="get-started-btn" onClick={() => navigate('/auth')}>
         Get Started
       </button>
     </div>
