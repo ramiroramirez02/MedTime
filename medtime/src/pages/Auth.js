@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/firebaseConfig';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider
+} from 'firebase/auth';
 import '../style/Auth.css';
+import TextToSpeech from './TextToSpeech';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -38,6 +44,7 @@ const Auth = () => {
 
   return (
     <div className="auth-container">
+      <TextToSpeech />
       <h2>{isLogin ? 'Login' : 'Sign Up'}</h2>
       <form onSubmit={handleSubmit} className="auth-form">
         <input

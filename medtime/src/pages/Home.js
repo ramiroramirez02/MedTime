@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase/firebaseConfig';
 import '../style/Home.css';
+import TextToSpeech from './TextToSpeech';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const Home = () => {
   return (
     <div className="home-container">
       <h1 className="home-title">💊 Never Miss a Dose Again</h1>
+      <TextToSpeech />
       <p className="home-description">
         Our web app helps you schedule your medications by day and time and automatically reminds you via email so you never miss a dose.
       </p>

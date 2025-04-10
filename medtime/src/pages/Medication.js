@@ -4,6 +4,7 @@ import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore'
 import { auth } from '../firebase/firebaseConfig';
 import emailjs from '@emailjs/browser';
 import '../style/Medication.css';
+import TextToSpeech from "./TextToSpeech";
 
 const Medication = () => {
   const uid = auth.currentUser?.uid;
@@ -202,6 +203,7 @@ const Medication = () => {
 
   return (
     <div className="medication-container">
+      <TextToSpeech />
       <h2>Set Medication Reminder</h2>
 
       <input
