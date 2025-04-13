@@ -32,6 +32,5 @@
 | EmailJS           | Sends email reminders            |
 | RxNorm API        | Medication lookup                |
 | FDA Drug Label API| Medication descriptions          |
-| RxImage API       | Pill images                      |
 
 ---
