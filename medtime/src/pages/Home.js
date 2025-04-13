@@ -1,20 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { auth } from '../firebase/firebaseConfig';
 import '../style/Home.css';
 import TextToSpeech from './TextToSpeech';
 
 const Home = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
-      if (!user) {
-        navigate('/login');
-      }
-    });
-    return () => unsubscribe();
-  }, [navigate]);
 
   return (
     <div className="home-container">

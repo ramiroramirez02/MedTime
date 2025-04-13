@@ -16,7 +16,7 @@ const Medication = () => {
   const [selectedMedicationInfo, setSelectedMedicationInfo] = useState(null);
   const [dosage, setDosage] = useState('');
   const [medicationsList, setMedicationsList] = useState([]);
-  const [sentReminders, setSentReminders] = useState(new Set());
+  const [sentReminders, setSentReminders] = useState([]); // Changed from Set to Array
 
   const [weeklySchedule, setWeeklySchedule] = useState({
     Monday: [],
@@ -94,7 +94,7 @@ const Medication = () => {
     const interval = setInterval(() => {
       const now = new Date();
       const today = now.toLocaleDateString("en-US", { weekday: "long" });
-      const currentTime = now.toTimeString().slice(0, 5);
+      const currentTime = now.toTimeString().slice(0, 5); // "HH:MM"
 
       medicationsList.forEach((med) => {
         const times = med.schedule?.[today] || [];
@@ -102,7 +102,7 @@ const Medication = () => {
         times.forEach((time) => {
           const uniqueId = `${med.name}-${time}`;
 
-          if (time === currentTime && !sentReminders.has(uniqueId)) {
+          if (time === currentTime && !sentReminders.includes(uniqueId)) {
             emailjs.send(
               'service_hl7g80j',
               'template_sr19vns',
@@ -118,7 +118,7 @@ const Medication = () => {
               'QHE4Xvlo_Di_nsR8E'
             ).then(() => {
               console.log(`📧 Reminder sent for ${med.name} at ${time}`);
-              setSentReminders(prev => new Set(prev).add(uniqueId));
+              setSentReminders(prev => [...prev, uniqueId]);
             }).catch((err) => {
               console.error('❌ Failed to send reminder:', err);
             });
@@ -128,7 +128,7 @@ const Medication = () => {
     }, 60000);
 
     return () => clearInterval(interval);
-  }, [medicationsList, uid, userEmail]);
+  }, [medicationsList, uid, userEmail, sentReminders]);
 
   const handleAddTime = (day) => {
     setWeeklySchedule({
