@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { auth, firestore as db } from '../firebase/firebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 import '../style/Profile.css';
 import TextToSpeech from "./TextToSpeech";
 
@@ -8,6 +10,7 @@ function Profile() {
   const user = auth.currentUser;
   const uid = user?.uid;
   const email = user?.email;
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
 
@@ -55,6 +58,15 @@ function Profile() {
     alert('✅ Profile updated!');
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
+
   if (loading) return <p>Loading profile...</p>;
 
   return (
@@ -63,6 +75,8 @@ function Profile() {
 
       <h2>User Profile</h2>
       <p><strong>Email:</strong> {email}</p>
+
+      <button onClick={handleLogout} className="logout-button">🚪 Logout</button>
 
       <form onSubmit={handleSave}>
         {/* GENERAL INFO */}
